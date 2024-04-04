@@ -1,8 +1,18 @@
 
 const path = require('path');
 const Image = require("@11ty/eleventy-img");
+const htmlmin = require("html-minifier-terser");
 
-module.exports = async function imageShortcode(src, alt, className, formats, widths, sizes) {
+const stringifyAttributes = (attributeMap) => {
+  return Object.entries(attributeMap)
+    .map(([attribute, value]) => {
+      if (typeof value === "undefined") return "";
+      return `${attribute}="${value}"`;
+    })
+    .join(" ");
+};
+
+module.exports = async function imageShortcode(src, alt, className, formats, widths, sizes = '90vw',) {
 
   const absSrc = `src/${src}`;
   const urlPath = path.dirname(src);
@@ -10,7 +20,7 @@ module.exports = async function imageShortcode(src, alt, className, formats, wid
 
   const metadata = await Image(absSrc, {
     widths: widths || [800],
-    formats: formats || ["webp", "jpg"],
+    formats: formats || ["avif", "webp", "jpeg"],
     urlPath,
     outputDir,
     filenameFormat: function (id, src, width, format, options) {
@@ -18,19 +28,29 @@ module.exports = async function imageShortcode(src, alt, className, formats, wid
     },
   });
 
-  const imageAttributes = {
+  const lowsrc = metadata.jpeg[metadata.jpeg.length - 1];
+  const imageSources = Object.values(metadata)
+    .map((imageFormat) => {
+      return `  <source type="${
+        imageFormat[0].sourceType
+      }" srcset="${imageFormat
+        .map((entry) => entry.srcset)
+        .join(", ")}" sizes="${sizes}">`;
+    })
+    .join("\n");
+
+  const imageAttributes = stringifyAttributes({
     alt,
     sizes,
-    class: className || '',
+    src: lowsrc.url,
+    width: lowsrc.width,
+    height: lowsrc.height,
+    class: className,
     loading: "lazy",
     decoding: "async",
-  };
+  });
 
-  const options = {
-    whitespaceMode: 'inline',
-  };
+  const imageElement = `<picture>${imageSources}<img ${imageAttributes} /></picture>`;
 
-  // You bet we throw an error on missing alt in `imageAttributes` (alt="" works okay)
-  return Image.generateHTML(metadata, imageAttributes, options);
-
+  return htmlmin.minify(imageElement, { collapseWhitespace: true });
 };

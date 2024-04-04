@@ -762,7 +762,7 @@ An [App Clip](https://developer.apple.com/app-clips/) is a micro-version of nati
 {% image
   "/images/walled-gardens/23_ios-app-clips.png",
   "A series of 5 iPhones each showing an App Clip panel with a prominent open action",
-  null, ["webp", "png"]
+  null
 %}
 
 <cite>App Clips as shown on [Apple.com](https://developer.apple.com/app-clips/)</cite>
